@@ -1,0 +1,53 @@
+// 1. Inisialisasi peta
+var map = L.map('map').setView([2.283, 102.456], 16);
+
+// 2. Basemap OpenStreetMap
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+// 3. Senarai file GeoJSON
+var geojsonFiles = [
+  'data/campusFootprint1.geojson',
+  'data/campusFootprint2.geojson',
+  'data/campusPoint1.geojson',
+  'data/campusPoint2.geojson',
+  'data/collegeFootprint.geojson',
+  'data/collegePoint.geojson'
+];
+
+// 4. Fungsi styling untuk feature
+function getStyle(feature) {
+  switch (feature.properties.type) {
+    case 'Footprint': return {color: '#ff7800', weight:2};
+    case 'Point': return {color: '#0066ff', radius:6};
+    default: return {color: '#3388ff'};
+  }
+}
+
+// 5. Load setiap GeoJSON dan tambah ke peta
+geojsonFiles.forEach(function(url) {
+  fetch(url)
+    .then(r => r.json())
+    .then(data => {
+      L.geoJSON(data, {
+        style: getStyle,
+        pointToLayer: function(feat, latlng) {
+          return L.circleMarker(latlng, {
+            radius:6, fillColor:'#0066ff', color:'#fff',
+            weight:1, opacity:1, fillOpacity:0.8
+          });
+        },
+        onEachFeature: function(feat, layer) {
+          var popup = '';
+          if (feat.properties) {
+            for (var p in feat.properties) {
+              popup += '<b>' + p + ':</b> ' + feat.properties[p] + '<br>';
+            }
+          }
+          layer.bindPopup(popup);
+        }
+      }).addTo(map);
+    })
+    .catch(err => console.error('Gagal muat', url, err));
+});
